@@ -1,0 +1,7 @@
+Cache::put('test_key', 'test_value', 10);
+Cache::get('test_key');
+exit
+Cache::put('test_key', 'test_value', 10);
+
+Cache::get('test_key');
+

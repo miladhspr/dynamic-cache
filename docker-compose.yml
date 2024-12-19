@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: post_nginx
+    restart: unless-stopped
+    ports:
+      - "9000:80"
+    volumes:
+      - ./posts:/var/www
+      - ./post_nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - post_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: post_app
+    restart: unless-stopped
+    volumes:
+      - ./posts:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=posts_db
+      - DB_USERNAME=user
+      - DB_PASSWORD=user_password
+      - CACHE_DRIVER=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=rabbitmq
+      - RABBITMQ_HOST=127.0.0.1  # Use the service name as the hostname
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=password
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - post_network
+  mysql:
+    image: mysql:8.0
+    container_name: post_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: posts_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - post_network
+
+  redis:
+    image: redis:latest
+    container_name: post_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - post_network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  post_network:
+    driver: bridge
